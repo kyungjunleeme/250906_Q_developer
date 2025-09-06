@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SaaS Admin Portal</title>
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .nav { margin-bottom: 20px; }
+        .nav a { margin-right: 20px; text-decoration: none; }
+        .form-group { margin: 10px 0; }
+        input, button { padding: 8px; margin: 5px; }
+        .card { border: 1px solid #ddd; padding: 15px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SaaS Admin Portal</h1>
+        <div class="nav">
+            <a href="/">Home</a>
+            <a href="/tenants">Tenants</a>
+            <a href="/users">Users</a>
+            <a href="/metrics">Metrics</a>
+        </div>
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

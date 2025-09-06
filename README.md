@@ -1,26 +1,36 @@
-# 250906_Q_developer
+# Multi-Tenant SaaS Platform
 
-# MCP: Multi-tenant Saas architecture 기반 AI Editor 설정 공유 허브 시스템
+Python-only multi-tenant SaaS built with AWS CDK, FastAPI, DynamoDB, and Cognito.
 
-Amazon Q Developer Hackathon으로 구현하고자 하는 아이디어를 설명합니다.
+## Architecture
 
-## 어플리케이션 개요
+- **Auth**: Cognito User Pool with multi-tenancy
+- **Data**: DynamoDB tables for tenants, users, items
+- **API**: FastAPI on Lambda with JWT middleware
+- **Web**: Two App Runner services (user/admin) with SSR
+- **Observability**: CloudWatch dashboards and alarms
 
-구현하고자 하는 어플리케이션의 목적 및 기능과 같은 어플리케이션에 대한 설명을 입력합니다.
+## Structure
 
-## 주요 기능
+```
+├── cdk/                    # CDK infrastructure
+├── services/              # Application services
+│   ├── api/              # FastAPI backend
+│   ├── web_user/         # User web app
+│   └── web_admin/        # Admin web app
+├── shared/               # Shared libraries
+└── ops/                  # Operations scripts
+```
 
-어플리케이션의 주요 기능 들을 설명합니다. 가능하다면 각 화면의 캡처를 기반으로 설명 자료를 작성합니다.
+## Deployment
 
-## 동영상 데모
+```bash
+# Install dependencies
+pip install -r requirements.txt
 
-Amazon Q Developer로 구현한 어플리케이션의 데모 영상을 입력합니다.
-**Git의 Readme에는 GIF 형식으로 업로드하며, 원본 동영상은 발표 Presentation에 제출합니다.**
+# Deploy to dev
+cdk deploy --all --profile dev
 
-## 리소스 배포하기
-
-해당 코드를 AWS 상에 배포하기 위한 방법을 설명합니다. 인프라를 배포했을 경우 출력되는 AWS 아키텍처도 함께 포함하며, 리소스를 삭제하는 방안도 함께 작성합니다.
-
-## 프로젝트 기대 효과 및 예상 사용 사례
-
-해당 프로젝트의 기대 효과와 예상되는 사용 사례를 작성합니다.
+# Run smoke tests
+python ops/smoke/test_health.py
+```

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Tenant Management</h2>
+
+<div class="card">
+    <h3>Create New Tenant</h3>
+    <form hx-post="/tenants">
+        <div class="form-group">
+            <input type="text" name="name" placeholder="Tenant name" required>
+            <button type="submit">Create Tenant</button>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <h3>Existing Tenants</h3>
+    <p>Tenant list would be displayed here with API integration.</p>
+</div>
+{% endblock %}

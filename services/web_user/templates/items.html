@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>My Items</h2>
+
+<form hx-post="/items" hx-target="#items-list" hx-swap="outerHTML">
+    <div class="form-group">
+        <input type="text" name="name" placeholder="Item name" required>
+        <input type="text" name="description" placeholder="Description">
+        <button type="submit">Add Item</button>
+    </div>
+</form>
+
+<div id="items-list">
+    {% for item in items %}
+    <div class="item">
+        <h4>{{ item.name }}</h4>
+        <p>{{ item.description or "No description" }}</p>
+        <small>Created: {{ item.created_at }}</small>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

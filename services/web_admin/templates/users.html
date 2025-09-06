@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>User Management</h2>
+
+<div class="card">
+    <h3>Users</h3>
+    {% for user in users %}
+    <div class="card">
+        <h4>{{ user.email }}</h4>
+        <p>Role: {{ user.role }}</p>
+        <p>Tenant: {{ user.tenant_id }}</p>
+        <small>Created: {{ user.created_at }}</small>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
