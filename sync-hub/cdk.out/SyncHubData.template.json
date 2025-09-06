@@ -1,0 +1,609 @@
+{
+ "Resources": {
+  "SettingsTable4DB0CCD0": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "tenant_id",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "setting_id",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "tenant_id",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "setting_id",
+      "KeyType": "RANGE"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": true
+    },
+    "StreamSpecification": {
+     "StreamViewType": "NEW_AND_OLD_IMAGES"
+    },
+    "TableName": "sync-hub-settings"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "SyncHubData/SettingsTable/Resource"
+   }
+  },
+  "BookmarksTable5112AF79": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "tenant_id",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "bookmark_id",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "tenant_id",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "bookmark_id",
+      "KeyType": "RANGE"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": true
+    },
+    "TableName": "sync-hub-bookmarks"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "SyncHubData/BookmarksTable/Resource"
+   }
+  },
+  "GroupsTableE5F9C3F0": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "tenant_id",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "group_id",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "tenant_id",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "group_id",
+      "KeyType": "RANGE"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": true
+    },
+    "TableName": "sync-hub-groups"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "SyncHubData/GroupsTable/Resource"
+   }
+  },
+  "GroupMembersTable5917DD66": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "tenant_id",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "group_id#user_id",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "tenant_id",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "group_id#user_id",
+      "KeyType": "RANGE"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": true
+    },
+    "TableName": "sync-hub-group-members"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "SyncHubData/GroupMembersTable/Resource"
+   }
+  },
+  "SessionsTable7C302024": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "tenant_id",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "session_id",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "tenant_id",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "session_id",
+      "KeyType": "RANGE"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": true
+    },
+    "TableName": "sync-hub-sessions"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "SyncHubData/SessionsTable/Resource"
+   }
+  },
+  "BackupBucket26B8E51C": {
+   "Type": "AWS::S3::Bucket",
+   "Properties": {
+    "BucketName": {
+     "Fn::Join": [
+      "",
+      [
+       "sync-hub-backups-",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       "-us-east-1"
+      ]
+     ]
+    },
+    "PublicAccessBlockConfiguration": {
+     "BlockPublicAcls": true,
+     "BlockPublicPolicy": true,
+     "IgnorePublicAcls": true,
+     "RestrictPublicBuckets": true
+    },
+    "Tags": [
+     {
+      "Key": "aws-cdk:auto-delete-objects",
+      "Value": "true"
+     }
+    ],
+    "VersioningConfiguration": {
+     "Status": "Enabled"
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "SyncHubData/BackupBucket/Resource"
+   }
+  },
+  "BackupBucketPolicy8C403F71": {
+   "Type": "AWS::S3::BucketPolicy",
+   "Properties": {
+    "Bucket": {
+     "Ref": "BackupBucket26B8E51C"
+    },
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "s3:PutBucketPolicy",
+        "s3:GetBucket*",
+        "s3:List*",
+        "s3:DeleteObject*"
+       ],
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": {
+         "Fn::GetAtt": [
+          "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+          "Arn"
+         ]
+        }
+       },
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "BackupBucket26B8E51C",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "BackupBucket26B8E51C",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "SyncHubData/BackupBucket/Policy/Resource"
+   }
+  },
+  "BackupBucketAutoDeleteObjectsCustomResourceD2F511C5": {
+   "Type": "Custom::S3AutoDeleteObjects",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+      "Arn"
+     ]
+    },
+    "BucketName": {
+     "Ref": "BackupBucket26B8E51C"
+    }
+   },
+   "DependsOn": [
+    "BackupBucketPolicy8C403F71"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "SyncHubData/BackupBucket/AutoDeleteObjectsCustomResource/Default"
+   }
+  },
+  "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ]
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "SyncHubData/Custom::S3AutoDeleteObjectsCustomResourceProvider/Role"
+   }
+  },
+  "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
+     },
+     "S3Key": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip"
+    },
+    "Timeout": 900,
+    "MemorySize": 128,
+    "Handler": "index.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs22.x",
+    "Description": {
+     "Fn::Join": [
+      "",
+      [
+       "Lambda function for auto-deleting objects in ",
+       {
+        "Ref": "BackupBucket26B8E51C"
+       },
+       " S3 bucket."
+      ]
+     ]
+    }
+   },
+   "DependsOn": [
+    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "SyncHubData/Custom::S3AutoDeleteObjectsCustomResourceProvider/Handler",
+    "aws:asset:path": "asset.faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6",
+    "aws:asset:property": "Code"
+   }
+  },
+  "SettingsTableParam7CBA4B03": {
+   "Type": "AWS::SSM::Parameter",
+   "Properties": {
+    "Name": "/sync-hub/data/settings-table",
+    "Type": "String",
+    "Value": {
+     "Ref": "SettingsTable4DB0CCD0"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "SyncHubData/SettingsTableParam/Resource"
+   }
+  },
+  "BookmarksTableParamFE92BA1A": {
+   "Type": "AWS::SSM::Parameter",
+   "Properties": {
+    "Name": "/sync-hub/data/bookmarks-table",
+    "Type": "String",
+    "Value": {
+     "Ref": "BookmarksTable5112AF79"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "SyncHubData/BookmarksTableParam/Resource"
+   }
+  },
+  "GroupsTableParam911CDAAA": {
+   "Type": "AWS::SSM::Parameter",
+   "Properties": {
+    "Name": "/sync-hub/data/groups-table",
+    "Type": "String",
+    "Value": {
+     "Ref": "GroupsTableE5F9C3F0"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "SyncHubData/GroupsTableParam/Resource"
+   }
+  },
+  "GroupMembersTableParam98009DDD": {
+   "Type": "AWS::SSM::Parameter",
+   "Properties": {
+    "Name": "/sync-hub/data/group-members-table",
+    "Type": "String",
+    "Value": {
+     "Ref": "GroupMembersTable5917DD66"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "SyncHubData/GroupMembersTableParam/Resource"
+   }
+  },
+  "SessionsTableParam91F488D2": {
+   "Type": "AWS::SSM::Parameter",
+   "Properties": {
+    "Name": "/sync-hub/data/sessions-table",
+    "Type": "String",
+    "Value": {
+     "Ref": "SessionsTable7C302024"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "SyncHubData/SessionsTableParam/Resource"
+   }
+  },
+  "BackupBucketParamA5FB3F9B": {
+   "Type": "AWS::SSM::Parameter",
+   "Properties": {
+    "Name": "/sync-hub/data/backup-bucket",
+    "Type": "String",
+    "Value": {
+     "Ref": "BackupBucket26B8E51C"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "SyncHubData/BackupBucketParam/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/3VOSw6CMBA9i/tSBbyAeAAJujelDFihrelMNYT07hYxsnL1PjNv3mQ8S/d8txEvTGTTJ4Oq+XQmIXsWrevUjEZo20TzIuoB2LE1HxIY5nwqvOyBZvPLFijtoOS42ouOEdTzcadMVwonNBC4eesnQmAVoPVOxiaPZPUqW/NnVDr7VA24QiCwAyJQ/L+LHXPm5OnhKbBypJs125ynGU/TzR2VSpw3pDTwasE3uJE3NwsBAAA="
+   },
+   "Metadata": {
+    "aws:cdk:path": "SyncHubData/CDKMetadata/Default"
+   }
+  }
+ },
+ "Outputs": {
+  "SettingsTableName": {
+   "Value": {
+    "Ref": "SettingsTable4DB0CCD0"
+   }
+  },
+  "BackupBucketName": {
+   "Value": {
+    "Ref": "BackupBucket26B8E51C"
+   }
+  },
+  "ExportsOutputFnGetAttSettingsTable4DB0CCD0Arn1D1BE79B": {
+   "Value": {
+    "Fn::GetAtt": [
+     "SettingsTable4DB0CCD0",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "SyncHubData:ExportsOutputFnGetAttSettingsTable4DB0CCD0Arn1D1BE79B"
+   }
+  },
+  "ExportsOutputFnGetAttBookmarksTable5112AF79Arn6C1D76FC": {
+   "Value": {
+    "Fn::GetAtt": [
+     "BookmarksTable5112AF79",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "SyncHubData:ExportsOutputFnGetAttBookmarksTable5112AF79Arn6C1D76FC"
+   }
+  },
+  "ExportsOutputFnGetAttGroupsTableE5F9C3F0Arn712D5AC0": {
+   "Value": {
+    "Fn::GetAtt": [
+     "GroupsTableE5F9C3F0",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "SyncHubData:ExportsOutputFnGetAttGroupsTableE5F9C3F0Arn712D5AC0"
+   }
+  },
+  "ExportsOutputFnGetAttGroupMembersTable5917DD66Arn797AE2F2": {
+   "Value": {
+    "Fn::GetAtt": [
+     "GroupMembersTable5917DD66",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "SyncHubData:ExportsOutputFnGetAttGroupMembersTable5917DD66Arn797AE2F2"
+   }
+  },
+  "ExportsOutputFnGetAttSessionsTable7C302024Arn24FF8012": {
+   "Value": {
+    "Fn::GetAtt": [
+     "SessionsTable7C302024",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "SyncHubData:ExportsOutputFnGetAttSessionsTable7C302024Arn24FF8012"
+   }
+  },
+  "ExportsOutputFnGetAttBackupBucket26B8E51CArnB9BED001": {
+   "Value": {
+    "Fn::GetAtt": [
+     "BackupBucket26B8E51C",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "SyncHubData:ExportsOutputFnGetAttBackupBucket26B8E51CArnB9BED001"
+   }
+  },
+  "ExportsOutputRefSettingsTable4DB0CCD0297D747B": {
+   "Value": {
+    "Ref": "SettingsTable4DB0CCD0"
+   },
+   "Export": {
+    "Name": "SyncHubData:ExportsOutputRefSettingsTable4DB0CCD0297D747B"
+   }
+  },
+  "ExportsOutputRefBookmarksTable5112AF799D024C02": {
+   "Value": {
+    "Ref": "BookmarksTable5112AF79"
+   },
+   "Export": {
+    "Name": "SyncHubData:ExportsOutputRefBookmarksTable5112AF799D024C02"
+   }
+  },
+  "ExportsOutputRefGroupsTableE5F9C3F0ABB57D6E": {
+   "Value": {
+    "Ref": "GroupsTableE5F9C3F0"
+   },
+   "Export": {
+    "Name": "SyncHubData:ExportsOutputRefGroupsTableE5F9C3F0ABB57D6E"
+   }
+  },
+  "ExportsOutputRefGroupMembersTable5917DD66230A0220": {
+   "Value": {
+    "Ref": "GroupMembersTable5917DD66"
+   },
+   "Export": {
+    "Name": "SyncHubData:ExportsOutputRefGroupMembersTable5917DD66230A0220"
+   }
+  },
+  "ExportsOutputRefSessionsTable7C3020246E1CCFDD": {
+   "Value": {
+    "Ref": "SessionsTable7C302024"
+   },
+   "Export": {
+    "Name": "SyncHubData:ExportsOutputRefSessionsTable7C3020246E1CCFDD"
+   }
+  },
+  "ExportsOutputRefBackupBucket26B8E51C0D3CA3CE": {
+   "Value": {
+    "Ref": "BackupBucket26B8E51C"
+   },
+   "Export": {
+    "Name": "SyncHubData:ExportsOutputRefBackupBucket26B8E51C0D3CA3CE"
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

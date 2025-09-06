@@ -1,0 +1,21 @@
+{
+  "version": "48.0.0",
+  "files": {
+    "9072c2f63c577ea453930139131032d068dd8b7b0dc660e3308b23339874648b": {
+      "displayName": "SyncHubObservability Template",
+      "source": {
+        "path": "SyncHubObservability.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-us-east-1-fa6aca11": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1",
+          "objectKey": "9072c2f63c577ea453930139131032d068dd8b7b0dc660e3308b23339874648b.json",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-us-east-1"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

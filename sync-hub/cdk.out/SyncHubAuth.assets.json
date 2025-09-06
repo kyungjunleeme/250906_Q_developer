@@ -1,0 +1,21 @@
+{
+  "version": "48.0.0",
+  "files": {
+    "d0ddb91144b20b4e55538e56d3b563482ad774be718fc89fc2194fb7d6eb349f": {
+      "displayName": "SyncHubAuth Template",
+      "source": {
+        "path": "SyncHubAuth.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-us-east-1-dccb884a": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1",
+          "objectKey": "d0ddb91144b20b4e55538e56d3b563482ad774be718fc89fc2194fb7d6eb349f.json",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-us-east-1"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

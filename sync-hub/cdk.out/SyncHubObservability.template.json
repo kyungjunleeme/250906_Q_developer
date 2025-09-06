@@ -1,0 +1,192 @@
+{
+ "Resources": {
+  "AlertTopic2720D535": {
+   "Type": "AWS::SNS::Topic",
+   "Properties": {
+    "TopicName": "sync-hub-alerts"
+   },
+   "Metadata": {
+    "aws:cdk:path": "SyncHubObservability/AlertTopic/Resource"
+   }
+  },
+  "Dashboard9E4231ED": {
+   "Type": "AWS::CloudWatch::Dashboard",
+   "Properties": {
+    "DashboardBody": {
+     "Fn::Join": [
+      "",
+      [
+       "{\"widgets\":[{\"type\":\"metric\",\"width\":12,\"height\":6,\"x\":0,\"y\":0,\"properties\":{\"view\":\"timeSeries\",\"title\":\"API 5XX Errors\",\"region\":\"",
+       {
+        "Ref": "AWS::Region"
+       },
+       "\",\"metrics\":[[\"AWS/ApiGatewayV2\",\"5XXError\",\"ApiId\",\"",
+       {
+        "Fn::ImportValue": "SyncHubApi:ExportsOutputRefHttpApiF5A9A8A7F70B5BDD"
+       },
+       "\",{\"stat\":\"Sum\"}]],\"yAxis\":{}}},{\"type\":\"metric\",\"width\":12,\"height\":6,\"x\":12,\"y\":0,\"properties\":{\"view\":\"timeSeries\",\"title\":\"API Latency\",\"region\":\"",
+       {
+        "Ref": "AWS::Region"
+       },
+       "\",\"metrics\":[[\"AWS/ApiGatewayV2\",\"IntegrationLatency\",\"ApiId\",\"",
+       {
+        "Fn::ImportValue": "SyncHubApi:ExportsOutputRefHttpApiF5A9A8A7F70B5BDD"
+       },
+       "\"]],\"yAxis\":{}}},{\"type\":\"metric\",\"width\":12,\"height\":6,\"x\":0,\"y\":6,\"properties\":{\"view\":\"timeSeries\",\"title\":\"Lambda Errors\",\"region\":\"",
+       {
+        "Ref": "AWS::Region"
+       },
+       "\",\"metrics\":[[\"AWS/Lambda\",\"Errors\",{\"stat\":\"Sum\"}]],\"yAxis\":{}}}]}"
+      ]
+     ]
+    },
+    "DashboardName": "SyncHub-Monitoring"
+   },
+   "Metadata": {
+    "aws:cdk:path": "SyncHubObservability/Dashboard/Resource"
+   }
+  },
+  "Api5xxAlarm31F257DC": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "AlertTopic2720D535"
+     }
+    ],
+    "AlarmDescription": "API 5XX errors exceeded threshold",
+    "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+    "Dimensions": [
+     {
+      "Name": "ApiId",
+      "Value": {
+       "Fn::ImportValue": "SyncHubApi:ExportsOutputRefHttpApiF5A9A8A7F70B5BDD"
+      }
+     }
+    ],
+    "EvaluationPeriods": 2,
+    "MetricName": "5XXError",
+    "Namespace": "AWS/ApiGatewayV2",
+    "Period": 300,
+    "Statistic": "Sum",
+    "Threshold": 10
+   },
+   "Metadata": {
+    "aws:cdk:path": "SyncHubObservability/Api5xxAlarm/Resource"
+   }
+  },
+  "ApiLatencyAlarm453002C0": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "AlertTopic2720D535"
+     }
+    ],
+    "AlarmDescription": "API latency exceeded 5 seconds",
+    "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+    "Dimensions": [
+     {
+      "Name": "ApiId",
+      "Value": {
+       "Fn::ImportValue": "SyncHubApi:ExportsOutputRefHttpApiF5A9A8A7F70B5BDD"
+      }
+     }
+    ],
+    "EvaluationPeriods": 3,
+    "MetricName": "IntegrationLatency",
+    "Namespace": "AWS/ApiGatewayV2",
+    "Period": 300,
+    "Statistic": "Average",
+    "Threshold": 5000
+   },
+   "Metadata": {
+    "aws:cdk:path": "SyncHubObservability/ApiLatencyAlarm/Resource"
+   }
+  },
+  "DashboardUrlParam956FD468": {
+   "Type": "AWS::SSM::Parameter",
+   "Properties": {
+    "Name": "/sync-hub/observability/dashboard-url",
+    "Type": "String",
+    "Value": {
+     "Fn::Join": [
+      "",
+      [
+       "https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#dashboards:name=",
+       {
+        "Ref": "Dashboard9E4231ED"
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "SyncHubObservability/DashboardUrlParam/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/0WMwQ6CMBBEv4V7WS36A0bvEvRuloJSoS3pbkNM03/XYqKnmfcmmQoquYdtgQuVqhvLSbcQL4xqFB91i2QJ4tXNWonj3a4lCTW50C3IaoB4Qhpah77L+x8OE3qT1VqSIDL512v7qNGj6bn3ef5BShnPgefASdQvHpzd7EBWIGXxJK1LHyxr00PzzTcteyPUugAAAA=="
+   },
+   "Metadata": {
+    "aws:cdk:path": "SyncHubObservability/CDKMetadata/Default"
+   }
+  }
+ },
+ "Outputs": {
+  "DashboardUrl": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#dashboards:name=",
+      {
+       "Ref": "Dashboard9E4231ED"
+      }
+     ]
+    ]
+   }
+  },
+  "AlertTopicArn": {
+   "Value": {
+    "Ref": "AlertTopic2720D535"
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

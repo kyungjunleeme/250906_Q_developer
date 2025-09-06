@@ -1,0 +1,473 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Sync Hub - Multi-tenant SaaS for VS Code Extension + Web Console'
+
+Resources:
+  # DynamoDB Tables
+  SettingsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: sync-hub-settings
+      AttributeDefinitions:
+        - AttributeName: tenant_id
+          AttributeType: S
+        - AttributeName: setting_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: tenant_id
+          KeyType: HASH
+        - AttributeName: setting_id
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+  BookmarksTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: sync-hub-bookmarks
+      AttributeDefinitions:
+        - AttributeName: tenant_id
+          AttributeType: S
+        - AttributeName: bookmark_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: tenant_id
+          KeyType: HASH
+        - AttributeName: bookmark_id
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+  GroupsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: sync-hub-groups
+      AttributeDefinitions:
+        - AttributeName: tenant_id
+          AttributeType: S
+        - AttributeName: group_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: tenant_id
+          KeyType: HASH
+        - AttributeName: group_id
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+  SessionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: sync-hub-sessions
+      AttributeDefinitions:
+        - AttributeName: tenant_id
+          AttributeType: S
+        - AttributeName: session_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: tenant_id
+          KeyType: HASH
+        - AttributeName: session_id
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+  # Lambda Execution Role
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+      Policies:
+        - PolicyName: DynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource:
+                  - !GetAtt SettingsTable.Arn
+                  - !GetAtt BookmarksTable.Arn
+                  - !GetAtt GroupsTable.Arn
+                  - !GetAtt SessionsTable.Arn
+
+  # Lambda Function
+  ApiFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: sync-hub-api
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 30
+      Environment:
+        Variables:
+          SETTINGS_TABLE: !Ref SettingsTable
+          BOOKMARKS_TABLE: !Ref BookmarksTable
+          GROUPS_TABLE: !Ref GroupsTable
+          SESSIONS_TABLE: !Ref SessionsTable
+      Code:
+        ZipFile: |
+          import json
+          import uuid
+          import time
+          import boto3
+          import os
+          from decimal import Decimal
+          from boto3.dynamodb.conditions import Key
+
+          class DecimalEncoder(json.JSONEncoder):
+              def default(self, obj):
+                  if isinstance(obj, Decimal):
+                      return float(obj)
+                  return super(DecimalEncoder, self).default(obj)
+
+          def handler(event, context):
+              try:
+                  method = event.get("requestContext", {}).get("http", {}).get("method")
+                  path = event.get("requestContext", {}).get("http", {}).get("path")
+                  
+                  print(f"Processing {method} {path}")
+                  
+                  # Health check
+                  if path == "/_health":
+                      return {
+                          "statusCode": 200,
+                          "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"},
+                          "body": json.dumps({"ok": True, "message": "Sync Hub API is running!", "timestamp": int(time.time())})
+                      }
+                  
+                  # Initialize DynamoDB
+                  dynamodb = boto3.resource('dynamodb')
+                  settings_table = dynamodb.Table(os.environ['SETTINGS_TABLE'])
+                  bookmarks_table = dynamodb.Table(os.environ['BOOKMARKS_TABLE'])
+                  groups_table = dynamodb.Table(os.environ['GROUPS_TABLE'])
+                  sessions_table = dynamodb.Table(os.environ['SESSIONS_TABLE'])
+                  
+                  tenant_id = "default"  # Default tenant for demo
+                  
+                  # Settings endpoints
+                  if path == "/settings/public":
+                      response = settings_table.scan(
+                          FilterExpression="is_public = :public",
+                          ExpressionAttributeValues={":public": True}
+                      )
+                      return {
+                          "statusCode": 200,
+                          "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"},
+                          "body": json.dumps({"settings": response.get("Items", [])}, cls=DecimalEncoder)
+                      }
+                  
+                  elif path == "/settings" and method == "GET":
+                      response = settings_table.query(
+                          KeyConditionExpression=Key('tenant_id').eq(tenant_id)
+                      )
+                      return {
+                          "statusCode": 200,
+                          "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"},
+                          "body": json.dumps({"settings": response.get("Items", [])}, cls=DecimalEncoder)
+                      }
+                  
+                  elif path == "/settings" and method == "POST":
+                      body = json.loads(event.get("body", "{}"))
+                      setting = {
+                          "tenant_id": tenant_id,
+                          "setting_id": str(uuid.uuid4()),
+                          "name": body.get("name", "Sample Setting"),
+                          "value": body.get("value", "Sample Value"),
+                          "is_public": body.get("is_public", False),
+                          "version": 1,
+                          "created_at": int(time.time()),
+                          "updated_at": int(time.time())
+                      }
+                      settings_table.put_item(Item=setting)
+                      return {
+                          "statusCode": 201,
+                          "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"},
+                          "body": json.dumps(setting, cls=DecimalEncoder)
+                      }
+                  
+                  # Bookmarks endpoints
+                  elif path == "/bookmarks" and method == "GET":
+                      response = bookmarks_table.query(
+                          KeyConditionExpression=Key('tenant_id').eq(tenant_id)
+                      )
+                      return {
+                          "statusCode": 200,
+                          "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"},
+                          "body": json.dumps({"bookmarks": response.get("Items", [])}, cls=DecimalEncoder)
+                      }
+                  
+                  elif path == "/bookmarks" and method == "POST":
+                      body = json.loads(event.get("body", "{}"))
+                      bookmark = {
+                          "tenant_id": tenant_id,
+                          "bookmark_id": str(uuid.uuid4()),
+                          "title": body.get("title", "Sample Bookmark"),
+                          "url": body.get("url", "https://example.com"),
+                          "tags": body.get("tags", []),
+                          "created_at": int(time.time()),
+                          "updated_at": int(time.time())
+                      }
+                      bookmarks_table.put_item(Item=bookmark)
+                      return {
+                          "statusCode": 201,
+                          "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"},
+                          "body": json.dumps(bookmark, cls=DecimalEncoder)
+                      }
+                  
+                  # Groups endpoints
+                  elif path == "/groups" and method == "GET":
+                      response = groups_table.query(
+                          KeyConditionExpression=Key('tenant_id').eq(tenant_id)
+                      )
+                      return {
+                          "statusCode": 200,
+                          "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"},
+                          "body": json.dumps({"groups": response.get("Items", [])}, cls=DecimalEncoder)
+                      }
+                  
+                  elif path == "/groups" and method == "POST":
+                      body = json.loads(event.get("body", "{}"))
+                      group = {
+                          "tenant_id": tenant_id,
+                          "group_id": str(uuid.uuid4()),
+                          "name": body.get("name", "Sample Group"),
+                          "description": body.get("description", ""),
+                          "owner_id": tenant_id,
+                          "created_at": int(time.time()),
+                          "updated_at": int(time.time())
+                      }
+                      groups_table.put_item(Item=group)
+                      return {
+                          "statusCode": 201,
+                          "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"},
+                          "body": json.dumps(group, cls=DecimalEncoder)
+                      }
+                  
+                  # Device flow simulation
+                  elif path == "/auth/device/start" and method == "POST":
+                      device_code = str(uuid.uuid4())[:8].upper()
+                      session_id = str(uuid.uuid4())
+                      
+                      session = {
+                          "tenant_id": tenant_id,
+                          "session_id": session_id,
+                          "device_code": device_code,
+                          "status": "pending",
+                          "created_at": int(time.time()),
+                          "ttl": int(time.time()) + 600
+                      }
+                      sessions_table.put_item(Item=session)
+                      
+                      return {
+                          "statusCode": 200,
+                          "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"},
+                          "body": json.dumps({
+                              "device_code": device_code,
+                              "session_id": session_id,
+                              "expires_in": 600
+                          }, cls=DecimalEncoder)
+                      }
+                  
+                  return {
+                      "statusCode": 404,
+                      "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"},
+                      "body": json.dumps({"error": "Not found", "path": path, "method": method})
+                  }
+                  
+              except Exception as e:
+                  print(f"Error: {str(e)}")
+                  return {
+                      "statusCode": 500,
+                      "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"},
+                      "body": json.dumps({"error": str(e)})
+                  }
+
+  # HTTP API Gateway
+  HttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: sync-hub-api
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowOrigins:
+          - "*"
+        AllowMethods:
+          - "*"
+        AllowHeaders:
+          - "*"
+
+  # Lambda Integration
+  LambdaIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiFunction.Arn}/invocations'
+      PayloadFormatVersion: '2.0'
+
+  # Lambda Permission for API Gateway
+  LambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ApiFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*'
+
+  # API Routes
+  HealthRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'GET /_health'
+      Target: !Sub 'integrations/${LambdaIntegration}'
+
+  SettingsPublicRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'GET /settings/public'
+      Target: !Sub 'integrations/${LambdaIntegration}'
+
+  SettingsGetRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'GET /settings'
+      Target: !Sub 'integrations/${LambdaIntegration}'
+
+  SettingsPostRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'POST /settings'
+      Target: !Sub 'integrations/${LambdaIntegration}'
+
+  BookmarksGetRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'GET /bookmarks'
+      Target: !Sub 'integrations/${LambdaIntegration}'
+
+  BookmarksPostRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'POST /bookmarks'
+      Target: !Sub 'integrations/${LambdaIntegration}'
+
+  GroupsGetRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'GET /groups'
+      Target: !Sub 'integrations/${LambdaIntegration}'
+
+  GroupsPostRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'POST /groups'
+      Target: !Sub 'integrations/${LambdaIntegration}'
+
+  DeviceStartRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'POST /auth/device/start'
+      Target: !Sub 'integrations/${LambdaIntegration}'
+
+  # Default Stage
+  DefaultStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref HttpApi
+      StageName: '$default'
+      AutoDeploy: true
+
+  # SSM Parameters for cross-stack references
+  ApiUrlParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /sync-hub/api/url
+      Type: String
+      Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+
+  SettingsTableParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /sync-hub/data/settings-table
+      Type: String
+      Value: !Ref SettingsTable
+
+  BookmarksTableParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /sync-hub/data/bookmarks-table
+      Type: String
+      Value: !Ref BookmarksTable
+
+  GroupsTableParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /sync-hub/data/groups-table
+      Type: String
+      Value: !Ref GroupsTable
+
+  SessionsTableParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /sync-hub/data/sessions-table
+      Type: String
+      Value: !Ref SessionsTable
+
+Outputs:
+  ApiUrl:
+    Description: 'API Gateway endpoint URL'
+    Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+    Export:
+      Name: SyncHub-ApiUrl
+
+  SettingsTableName:
+    Description: 'DynamoDB Settings Table Name'
+    Value: !Ref SettingsTable
+    Export:
+      Name: SyncHub-SettingsTable
+
+  BookmarksTableName:
+    Description: 'DynamoDB Bookmarks Table Name'
+    Value: !Ref BookmarksTable
+    Export:
+      Name: SyncHub-BookmarksTable
+
+  GroupsTableName:
+    Description: 'DynamoDB Groups Table Name'
+    Value: !Ref GroupsTable
+    Export:
+      Name: SyncHub-GroupsTable
+
+  SessionsTableName:
+    Description: 'DynamoDB Sessions Table Name'
+    Value: !Ref SessionsTable
+    Export:
+      Name: SyncHub-SessionsTable
